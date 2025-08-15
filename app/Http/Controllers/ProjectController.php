@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Project;
-use Http\Requests\ProjectRequest;
-use Http\Resources\ProjectResource;
+use App\Http\Requests\ProjectRequest;
+use App\Http\Resources\ProjectResource;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\QueryBuilder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -85,7 +85,7 @@ class ProjectController extends Controller
 
     public function update (ProjectRequest $request, Project $project) {
         try{
-            $project = DB::transaction(function() use ($request, $project) {
+            DB::transaction(function() use ($request, $project) {
                 return $project->update($request->validated());
             });
             return (new ProjectResource($project))
@@ -126,14 +126,15 @@ class ProjectController extends Controller
 
     // Upload cover image
 
-    public function uploadCover(Request $request, Project $project) {
-        try{
-
+   public function uploadCover(Request $request, Project $project) {
+    try {
         $request->validate(['file' => 'required|image|max:4096']);
 
-        DB::transaction(function() use ($request, $project){
+        DB::transaction(function () use ($request, $project) {
             $project->clearMediaCollection('cover');
-            $project->addMedia($request->file('file')->toMediaCollection('cover'));
+            $project
+                ->addMedia($request->file('file'))
+                ->toMediaCollection('cover');
         });
 
         return response()->json([
@@ -141,47 +142,59 @@ class ProjectController extends Controller
             'message' => 'Kapak resmi başarıyla yüklendi.',
             'cover' => $project->getFirstMediaUrl('cover'),
         ]);
-
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Kapak resmi yüklenirken bir hata oluştu.',
-                'errors' => $e->getMessage(),
-            ], 500);
-        }
-
+    } catch (\Exception $e) {
         return response()->json([
-            'ok' => true,
-            'cover' => $project->getFirstMediaUrl('cover'),
-        ]);
+            'status' => false,
+            'message' => 'Kapak resmi yüklenirken bir hata oluştu.',
+            'errors' => $e->getMessage(),
+        ], 500);
     }
+}
 
     // Upload gallery images
 
-    public function uploadGallery(Request $request, Project $project){
-        try{
-            $request->validate(['files.*' => 'required|media|max:4096']);
-        DB::transaction(function() use ($request, $project){
-            foreach (($request->file('files') ?? []) as $file) {
-                $project->addMedia($file)->toMediaCollection('gallery');
-            }
-            return response()->json([
-                'status' => true,
-                'message' => 'Galeri resimleri başarıyla yüklendi.',
-                'gallery' => $project->getMedia('gallery')->map->getUrl(),
-            ]);
-        });
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Galeri resimleri yüklenirken bir hata oluştu.',
-                'errors' => $e->getMessage(),
-            ], 500);
-        }
+public function uploadGallery(Request $request, Project $project) {
+    try {
+       $request->validate([
+    'files' => 'required',
+    'files.*' => 'image|max:4096'
+]);
 
+$files = is_array($request->file('files'))
+    ? $request->file('files')
+    : [$request->file('files')]; // tek dosyayı array'e çevir
+
+foreach ($files as $file) {
+    $project
+        ->addMedia($file)
+        ->toMediaCollection('gallery');
+}
+
+
+        DB::transaction(function () use ($request, $project) {
+            foreach ($request->file('files') as $file) {
+                $project
+                    ->addMedia($file)
+                    ->toMediaCollection('gallery');
+            }
+        });
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Galeri resimleri başarıyla yüklendi.',
+            'gallery' => $project->getMedia('gallery')->map->getUrl(),
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Galeri resimleri yüklenirken bir hata oluştu.',
+            'errors' => $e->getMessage(),
+        ], 500);
+    }
+}
 
 
 
     }
-}
+
