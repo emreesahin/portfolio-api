@@ -19,11 +19,25 @@ class ProjectResource extends JsonResource
                 'github' => $this->url_github,
                 'live' => $this->url_live,
             ],
+              'category' => $this->whenLoaded('category', function () {
+            return [
+                'id' => $this->category->id,
+                'name' => $this->category->name,
+                'slug' => $this->category->slug,
+            ];
+        }),
             'featured'=>$this->featured,
             'started_at'=>optional($this->started_at)->toDateString(),
             'ended_at'=>optional($this->ended_at)->toDateString(),
             'cover'=>$this->getFirstMediaUrl('cover') ?: null,
-            'gallery'=>$this->getMedia('gallery')->map->getUrl(),
+            'gallery' => $this->getMedia('gallery')->map(function($media) {
+            return [
+                'url' => $media->getUrl(),
+                'name' => $media->file_name,
+                'size' => $media->size,
+            ];
+        }),
+
             'created_at'=>$this->created_at?->toIso8601String(),
         ];
     }

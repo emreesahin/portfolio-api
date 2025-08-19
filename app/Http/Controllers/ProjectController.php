@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Project;
 use App\Http\Requests\ProjectRequest;
 use App\Http\Resources\ProjectResource;
+use App\Http\Models\Category;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\QueryBuilder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -15,114 +16,129 @@ class ProjectController extends Controller
 
     // Project list
 
-    public function index(Request $request) {
+   public function index(Request $request) {
     try {
         $projects = QueryBuilder::for(Project::class)
             ->allowedFilters(['featured', 'title'])
             ->allowedSorts(['created_at', 'started_at'])
-            ->with('media')
+            ->with('media', 'category')
             ->paginate($request->integer('per_page', 10))
             ->appends($request->query());
 
-        return ProjectResource::collection($projects);
+        return ProjectResource::collection($projects)
+            ->additional([
+                'status' => true,
+                'message' => 'Projeler başarıyla listelendi.'
+            ]);
+
     } catch (\Exception $e) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Projeler listelenemedi',
-                    'errors' => $e->getMessage(),
-                ], 500);
-            }
-        }
+        return response()->json([
+            'status' => false,
+            'message' => 'Projeler listelenemedi',
+            'errors' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 
     // Project details
 
-    public function show (string $slug) {
-        try {
-            $project = Project::where('slug',$slug)->with('media')->firstOrFail();
-            return new ProjectResource($project);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Proje bulunamadı.',
-                'errors' => $e->getMessage(),
-            ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Proje detayı getirilirken bir hata oluştu.',
-                'errors' => $e->getMessage(),
-            ], 500);
-        }
+   public function show(string $slug) {
+    try {
+        $project = Project::where('slug',$slug)->with('media', 'category')->firstOrFail();
 
+        return (new ProjectResource($project))
+            ->additional([
+                'status' => true,
+                'message' => 'Proje detayı başarıyla getirildi.'
+            ]);
 
+    } catch (ModelNotFoundException $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Proje bulunamadı.',
+            'errors' => $e->getMessage(),
+        ], 404);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Proje detayı getirilirken bir hata oluştu.',
+            'errors' => $e->getMessage(),
+        ], 500);
     }
+}
+
 
     // Create project
 
-    public function store(ProjectRequest $request)
-    {
-        try {
-            $project = DB::transaction(function () use ($request){
-                return Project::create($request->validated());
-            });
-            return (new ProjectResource($project))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Proje başarıyla oluşturuldu.',
-                ])
-                ->response()
-                ->setStatusCode(201);
-        } catch (\Exception $exception) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Proje oluşturulurken bir hata oluştu.',
-                'errors' => $exception->getMessage(),
-            ], 500);
-        }
+   public function store(ProjectRequest $request)
+{
+    try {
+        $project = Project::create($request->validated());
+
+        return (new ProjectResource($project))
+            ->additional([
+                'status' => true,
+                'message' => 'Proje başarıyla oluşturuldu.',
+            ])
+            ->response()
+            ->setStatusCode(201);
+
+    } catch (\Exception $exception) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Proje oluşturulurken bir hata oluştu.',
+            'errors' => $exception->getMessage(),
+        ], 500);
     }
+}
+
 
     // Update project
 
-    public function update (ProjectRequest $request, Project $project) {
-        try{
-            DB::transaction(function() use ($request, $project) {
-                return $project->update($request->validated());
-            });
-            return (new ProjectResource($project))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Proje başarıyla güncellendi.',
-                ])
-                ->response()
-                ->setStatusCode(200);
-        } catch (\Exception $exception) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Proje güncellenirken bir hata oluştu.',
-                'errors' => $exception->getMessage(),
-            ], 500);
-        }
+    public function update(ProjectRequest $request, Project $project) {
+    try {
+        $project->update($request->validated());
+
+        return (new ProjectResource($project))
+            ->additional([
+                'status' => true,
+                'message' => 'Proje başarıyla güncellendi.',
+            ])
+            ->response()
+            ->setStatusCode(200);
+
+    } catch (\Exception $exception) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Proje güncellenirken bir hata oluştu.',
+            'errors' => $exception->getMessage(),
+        ], 500);
     }
+}
+
 
     // Delete project
 
-    public function destroy (Project $project) {
-        try{
-            DB::transaction(function()use($project){
-                $project->delete();
-            });
-            return response()->json([
-                'status' => true,
-                'message' => 'Proje başarıyla silindi.'
-            ]);
-        } catch (\Exception $exception) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Proje silinirken bir hata oluştu.',
-                'errors' => $exception->getMessage(),
-            ], 500);
-        }
+public function destroy(Project $project) {
+    try {
+        $project->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Proje başarıyla silindi.',
+            'data' => null
+        ]);
+
+    } catch (\Exception $exception) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Proje silinirken bir hata oluştu.',
+            'errors' => $exception->getMessage(),
+        ], 500);
     }
+}
+
 
     // Upload cover image
 
@@ -155,29 +171,21 @@ class ProjectController extends Controller
 
 public function uploadGallery(Request $request, Project $project) {
     try {
-       $request->validate([
-    'files' => 'required',
-    'files.*' => 'image|max:4096'
-]);
-
-$files = is_array($request->file('files'))
-    ? $request->file('files')
-    : [$request->file('files')]; // tek dosyayı array'e çevir
-
-foreach ($files as $file) {
-    $project
-        ->addMedia($file)
-        ->toMediaCollection('gallery');
-}
+        $request->validate([
+            'files' => 'required|array',
+            'files.*' => 'image|max:4096'
+        ]);
 
 
-        DB::transaction(function () use ($request, $project) {
-            foreach ($request->file('files') as $file) {
-                $project
-                    ->addMedia($file)
-                    ->toMediaCollection('gallery');
-            }
-        });
+
+        $files = $request->file('files');
+
+        foreach ($files as $file) {
+            $project
+                ->addMedia($file)
+                ->toMediaCollection('gallery');
+        }
+
 
         return response()->json([
             'status' => true,
