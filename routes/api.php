@@ -55,6 +55,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::delete('admin/categories/{category}', [CategoryController::class, 'destroy']);
 
     // ADMIN USER PROFILE ROUTES
-    Route::get('/me', [UserProfileController::class, 'index']);
+    Route::get('/me', [UserProfileController::class, 'show']);
     Route::put('/me', [UserProfileController::class, 'update']);
 });
