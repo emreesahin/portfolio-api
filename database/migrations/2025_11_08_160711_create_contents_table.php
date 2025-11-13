@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('contents', function (Blueprint $table) {
+            $table->id();
+            $table->string('home_title')->nullable();
+            $table->text('home_subtitle')->nullable();
+            $table->string('projects_title')->nullable();
+            $table->string('projects_empty')->nullable();
+            $table->string('contact_title')->nullable();
+            $table->text('contact_text')->nullable();
+            $table->string('contact_button')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('contents');
+    }
+};
