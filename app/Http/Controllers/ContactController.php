@@ -3,16 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\ContactContent;
+use App\Models\Contact;
 use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
-
     public function showContent()
     {
         try {
-            $contact = ContactContent::first();
+            $contact = Contact::first();
 
             if (!$contact) {
                 return response()->json([
@@ -44,7 +43,7 @@ class ContactController extends Controller
                 'form' => 'nullable|array',
             ]);
 
-            $contact = ContactContent::firstOrCreate([]);
+            $contact = Contact::firstOrCreate([]);
             $contact->update($validated);
 
             return response()->json([
@@ -69,7 +68,7 @@ class ContactController extends Controller
     public function destroyContent()
     {
         try {
-            $contact = ContactContent::first();
+            $contact = Contact::first();
 
             if (!$contact) {
                 return response()->json([
