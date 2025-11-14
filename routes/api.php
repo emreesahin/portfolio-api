@@ -18,7 +18,6 @@ use App\Http\Controllers\MessageController;
 | API Routes
 |--------------------------------------------------------------------------
 | Portfolio API (Laravel 12 + Sanctum + Spatie Roles)
-| Public ve admin erişimlerini ayrı gruplar halinde toplar.
 |--------------------------------------------------------------------------
 */
 
@@ -39,7 +38,7 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 
 
 // ===========================
-// 🙋 PROFILE
+// 🙋 PROFILE (Protected)
 // ===========================
 Route::middleware('auth:sanctum')->get('/profile', [ProfileController::class, 'me']);
 
@@ -48,17 +47,17 @@ Route::middleware('auth:sanctum')->get('/profile', [ProfileController::class, 'm
 // 📁 PUBLIC CMS ROUTES
 // ===========================
 
-// Home content (tek satır yapı)
-Route::get('/content', [ContentController::class, 'show']);
+// Home content (public)
+Route::get('/content', [ContentController::class, 'index']);
 
-// About page (tek satır JSON yapı)
+// About page content (public)
 Route::get('/about', [AboutController::class, 'show']);
 
-// Contact page içeriği (JSON yapı)
+// Contact page content (public)
 Route::get('/contact-content', [ContactController::class, 'showContent']);
 
-// Contact form submission
-Route::post('/contact', [ContactController::class, 'storeMessage']);
+// Contact form submission (USER MESSAGE SENDS)
+Route::post('/contact', [MessageController::class, 'store']);
 
 
 // ===========================
@@ -75,7 +74,7 @@ Route::get('/projects/{slug}', [ProjectController::class, 'show']);
 
 
 // ===========================
-// 🔒 ADMIN (auth:sanctum + role:admin)
+// 🔒 ADMIN ROUTES
 // ===========================
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
@@ -89,15 +88,18 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::put('/projects/{id}', [ProjectController::class, 'update']);
     Route::delete('/projects/{id}', [ProjectController::class, 'destroy']);
 
-    // ✅ Content (home page text)
+    // ✅ Content (Home page)
     Route::put('/content', [ContentController::class, 'update']);
 
-    // ✅ About
+    // ✅ About page
     Route::put('/about', [AboutController::class, 'update']);
 
-    // ✅ Messages (iletişim form kayıtları)
+    // ✅ Contact Page Content
+    Route::post('/contact-content', [ContactController::class, 'storeContent']);
+    Route::delete('/contact-content', [ContactController::class, 'destroyContent']);
+
+    // ✅ Messages (User submissions)
     Route::get('/messages', [MessageController::class, 'index']);
     Route::get('/messages/{id}', [MessageController::class, 'show']);
     Route::delete('/messages/{id}', [MessageController::class, 'destroy']);
 });
-

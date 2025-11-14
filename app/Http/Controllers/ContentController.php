@@ -6,6 +6,7 @@ use App\Models\Content;
 use Illuminate\Http\Request;
 use Exception;
 
+
 class ContentController extends Controller
 {
     // 🔹 Tek içerik (anasayfa)

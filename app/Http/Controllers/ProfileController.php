@@ -8,11 +8,12 @@ class ProfileController extends Controller
 {
     public function me(Request $request){
         try{
-            $user + $request->user();
+            // Doğru: user ataması
+            $user = $request->user();
 
             if(!$user){
                 return response()->json([
-                    'status' => 'false',
+                    'status' => false,
                     'message' => 'User not found'
                 ], 404);
             }
@@ -22,12 +23,12 @@ class ProfileController extends Controller
                 'data' => $user,
                 'roles' => $user->getRoleNames()
             ], 200);
-        }
-        catch(\Exception $e){
+
+        } catch(\Exception $e){
             return response()->json([
                 'message' => 'Error fetching user profile',
                 'error' => $e->getMessage()
-            ]);
+            ], 500);
         }
     }
 }
